@@ -12,7 +12,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   
-  <!-- Babel (ブラウザ上でReactコードを変換) -->
+  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
@@ -61,7 +61,6 @@
 
     // --- メインアプリケーション ---
     const App = () => {
-      // 正しく「1. 概念と落とし穴（explanation）」が初期タブに設定されています。
       const [activeTab, setActiveTab] = useState('explanation'); 
       
       const [outcomes, setOutcomes] = useState([
@@ -139,14 +138,462 @@
       );
     };
 
-    // --- 各セクションコンポーネント ---
+    // =========================================================
+    // 1. 解説セクション コンポーネント (詳細復元版)
+    // =========================================================
+    const ExplanationSection = ({ setActiveTab }) => {
+      return (
+        <div className="space-y-10 animate-fadeIn">
+          
+          <section>
+            <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-4">
+              大前提：「Utility（状態）」と「Rate（率）」は全く別の概念です
+            </h2>
+            <p className="mb-4 text-gray-700">
+              医療論文やガイドラインを読む際、最も陥りやすい誤解は<strong>「Utility（効用）」</strong>と<strong>「Rate（率）」</strong>を混同してしまうことです。この2つは全く異なる概念です。論文（GRADE Guidance 42）の定義を確認しましょう。
+            </p>
+
+            <div className="bg-blue-50 p-5 rounded-lg border border-blue-100 flex flex-col md:flex-row gap-6 mb-6">
+              <div className="flex-1 bg-white p-4 rounded shadow-sm border-t-4 border-blue-400">
+                <h3 className="font-bold text-blue-800 mb-2 text-lg flex items-center">
+                  <Activity className="w-5 h-5 mr-2" />
+                  ① Utility（効用値）＝「状態」のスコア
+                </h3>
+                <p className="text-sm text-gray-800 italic mb-2 border-l-2 border-gray-300 pl-2">
+                  "Utilities, which consist of a value from 0 to 1 placed on a health outcome, where a value of 1 represents full health and 0 represents death..." (Guidance 42, Page 4)
+                </p>
+                <p className="text-sm text-gray-700 mb-2">
+                  生存と死亡の間にある<strong>「状態の質」</strong>を、死亡を「0」、完全な健康を「1」として表した固定値です。
+                </p>
+                <p className="text-sm text-gray-700 font-semibold bg-blue-50 p-2 rounded">
+                  ※なぜ「効用（Utility）」と呼ぶ？<br/>
+                  特定の健康状態が、患者にとってどれくらい「好ましいか（満足度・QOLの高さ）」を示す医療経済学・意思決定理論の用語だからです。
+                </p>
+                <p className="text-sm text-red-600 font-bold mt-2">
+                  ⚠️ 決して「死亡率を0、生存率を1としたもの」ではありません！
+                </p>
+              </div>
+
+              <div className="flex-1 bg-white p-4 rounded shadow-sm border-t-4 border-green-400">
+                <h3 className="font-bold text-green-800 mb-2 text-lg flex items-center">
+                  <Scale className="w-5 h-5 mr-2" />
+                  ② Rate（率）＝「人数の割合」
+                </h3>
+                <p className="text-sm text-gray-700 mb-2">
+                  特定のUtilityを持つ「状態の箱」に入った人数の割合（確率）です。
+                </p>
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1 mb-2">
+                  <li>死亡率：Utility 0 の状態になった人の割合</li>
+                  <li>生存率：Utility 1（等）の状態になった人の割合</li>
+                </ul>
+                <p className="text-sm text-green-800 font-bold bg-green-50 p-3 rounded border border-green-200">
+                  「死亡率が5%下がる」と「生存率が5%上がる」は、表現が違うだけで全く同じ現象（人の移動）を指します。
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-purple-500 pl-3 mb-4">
+              「Utility（状態）」と「閾値における利益・害（人数の増減）」の違い
+            </h2>
+            <p className="mb-4 text-gray-700">
+              もう一つ混同しやすいのが、「健康・死亡」といった状態（Utility）と、意思決定閾値（DTs）で使われる「利益（Benefit）・害（Harm）」という言葉です。これらも全く別の話です。
+            </p>
+
+            <div className="bg-purple-50 p-4 rounded border border-purple-200 mb-4">
+              <p className="font-bold text-purple-900 mb-2 flex items-center">
+                <Star className="w-5 h-5 mr-2 text-purple-600" />
+                論文における閾値（DTs）の定義（Guidance 42, Page 12, 15）
+              </p>
+              <p className="text-sm text-gray-800 italic mb-2 border-l-2 border-gray-300 pl-2">
+                "The DTs are assumed to be symmetrical for either benefit or harm of an intervention (i.e., fewer or more events per 1000 people)"
+              </p>
+              <p className="text-sm text-gray-700">
+                （訳：DT（閾値）は、介入の利益または害（すなわち、1000人あたりのイベントの減少または増加）のいずれに対しても対称であると想定される。）
+              </p>
+            </div>
+            <p className="text-sm text-gray-700">
+              つまり、<strong>閾値における「利益・害」とは、Utilityの点数ではなく、「イベントが何人増えたか・減ったか（Rateの変化）」の話</strong>です。悪いイベント（死亡など）が減れば「利益（Benefit）」、増えれば「害（Harm）」です。
+            </p>
+          </section>
+
+          <section className="bg-orange-50 p-6 rounded-lg border-2 border-orange-300">
+            <h2 className="text-xl font-bold text-orange-900 flex items-center mb-4">
+              <Search className="w-6 h-6 mr-2" />
+              核心的な矛盾：良いアウトカム（生存・成功）をどう計算するか？
+            </h2>
+            <p className="mb-4 text-sm text-gray-800">
+              論文の建前では「閾値（DT）は利益（生存率増など）であっても害（死亡率増など）であっても、1000人あたりのイベントの増減として対称的に扱う」とされています。<br/>
+              <span className="font-bold text-red-700">しかし、ここに論文の記述と数式の「致命的な矛盾」が潜んでいます。</span>
+            </p>
+            
+            <div className="bg-white p-4 rounded shadow-sm mb-4 border-l-4 border-red-500">
+              <h3 className="font-bold text-gray-800 mb-2">もし「治療成功（Utility = 0.9）」をそのまま数式に入れたら？</h3>
+              <p className="text-sm text-gray-700">
+                GRADEの重み付けの式は <code>Disutility = 1 - Utility</code> です。治療成功(0.9)を入れると、Disutilityは <strong>0.1</strong> になります。<br/>
+                これでは「治療成功は、死亡(1.0)の10分の1の価値しかない、どうでもいいアウトカムだ」と判定され、計算される閾値の人数が「135人」などと異常に膨れ上がってしまいます。
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded shadow-sm border-l-4 border-green-500">
+              <h3 className="font-bold text-gray-800 mb-2">論文の実例（WHO結核ガイドライン）から読み解く「真実」</h3>
+              <p className="text-sm text-gray-700 mb-2">
+                論文のPage 28-29で、著者は「Sustained treatment success (health utility: 0.9)」の閾値を、死亡とほぼ同じ厳しい水準（T1=15人など）に設定しています。
+              </p>
+              <p className="text-sm font-bold text-green-800 bg-green-50 p-3 rounded border border-green-200">
+                【結論】<br/>
+                論文には「良いアウトカムは悪いアウトカムに置き換えろ」とは直接書かれていません。しかし実際の計算例を見ると、著者は実務上、良いアウトカム（成功）を評価する際、暗黙のうちに「それが達成できないこと＝失敗（Utility 0.1）」を基準にして計算し、辻褄を合わせています。<br/>
+                <span className="text-red-600 underline">つまり、良いアウトカムの増減（利益）を評価する場合は、必ず「逆の悪いアウトカム（不健康・失敗）」のUtilityに置き換えて計算しなければ、数学的に破綻するのです。</span>
+              </p>
+            </div>
+          </section>
+          
+          <div className="text-center mt-8">
+            <button onClick={() => setActiveTab('theory')} className="bg-purple-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-purple-700 transition">
+              次へ：閾値計算の根拠と批判へ
+            </button>
+          </div>
+        </div>
+      );
+    };
 
     // =========================================================
-    // 4. 計算ツール（シミュレーター）セクション - 大幅UI改善
+    // 2. 理論的根拠と批判的吟味セクション コンポーネント (詳細復元版)
+    // =========================================================
+    const TheoryAndCritiqueSection = ({ setActiveTab }) => {
+      return (
+        <div className="space-y-10 animate-fadeIn">
+          
+          <section className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <h2 className="text-2xl font-bold text-blue-900 flex items-center mb-4">
+              <Database className="w-8 h-8 mr-2 text-blue-600" />
+              ベース値（13.5, 32.1, 62.5）はどこから算出されたのか？
+            </h2>
+            <p className="mb-4 text-gray-800">
+              GRADEにおける閾値計算の基準となる <code>T1=13.5</code>（TrivialとSmallの境界）、<code>T2=32.1</code>（SmallとModerateの境界）、<code>T3=62.5</code>（ModerateとLargeの境界）という数値は、単なる机上の空論ではなく、GRADE Working Groupが実施した<strong>「GRADE-THRESHOLD」という大規模なアンケート調査</strong>（Zeng L et al. 2023, Morgano GP et al. 2024）のデータから導き出されたものです。
+            </p>
+            
+            <div className="bg-white p-5 rounded-lg shadow-sm border border-blue-100 mb-4">
+              <h3 className="font-bold text-lg text-blue-800 mb-4 border-b border-blue-100 pb-2">「0.0135（1000人中13.5人）」が導出されるまでの4ステップ</h3>
+              <ol className="space-y-5 text-sm text-gray-700">
+                <li className="flex">
+                  <span className="font-bold text-blue-600 mr-3 text-xl leading-none">1.</span>
+                  <div>
+                    <strong className="text-gray-900 text-base">ステークホルダーへのシナリオ提示</strong><br/>
+                    臨床医、研究者、ガイドライン開発者、患者代表など（最終解析対象288名）を対象に調査を実施。回答者には、健康への影響が異なる5つのアウトカム（死、重度の脳卒中、中等度の肺塞栓症、中等度の下痢、軽度の吐き気/嘔吐）と、それぞれの「効用値（Utility：1が完全な健康、0が死）」が設定されたシナリオがランダムに提示されました。
+                  </div>
+                </li>
+                <li className="flex">
+                  <span className="font-bold text-blue-600 mr-3 text-xl leading-none">2.</span>
+                  <div>
+                    <strong className="text-gray-900 text-base">効果の大きさ（絶対リスク差）の範囲の回答</strong><br/>
+                    回答者は各シナリオにおいて、介入の絶対効果（絶対リスク差：ARD）がどの程度の範囲であれば、その効果を「Small（小さい）」または「Moderate（中程度）」と判断するか、下限値と上限値を回答しました。※「Small」の下限未満は「Trivial (些細)」と見なされます。
+                  </div>
+                </li>
+                <li className="flex">
+                  <span className="font-bold text-blue-600 mr-3 text-xl leading-none">3.</span>
+                  <div>
+                    <strong className="text-gray-900 text-base">不効用（Disutility）を用いた個別の閾値計算</strong><br/>
+                    回答されたARDの境界値を用いて、以下の式で個別の閾値スコアが計算されました。<br/>
+                    <code className="bg-gray-100 px-3 py-1.5 rounded text-blue-800 font-bold block my-2 border border-gray-200">
+                      回答された絶対リスク差(ARD)の境界値 × そのアウトカムの不効用（1 − 効用値）
+                    </code>
+                    T1（TrivialとSmallの境界）については、回答者が「Small」と判断した下限値を用いてこの積が計算されました。
+                  </div>
+                </li>
+                <li className="flex">
+                  <span className="font-bold text-blue-600 mr-3 text-xl leading-none">4.</span>
+                  <div>
+                    <strong className="text-gray-900 text-base">データ統合による汎用係数（Generic coefficient）の導出</strong><br/>
+                    得られたデータに線形回帰モデルを当てはめました。その結果、あらゆるアウトカムに適用できる全体的な平均値として、T1の汎用係数<strong>「0.0135」</strong>（95%信頼区間：0.0103～0.0168）が導き出されました。
+                  </div>
+                </li>
+              </ol>
+            </div>
+            
+            <div className="bg-blue-100 p-4 rounded text-sm text-blue-900 font-semibold border-l-4 border-blue-600">
+              【まとめ】<br/>
+              「0.0135」という係数は、「さまざまな重症度のアウトカムに対して、人々がどの程度の絶対リスク減少があれば『意味のある（Small以上の）効果』と見なすか」という主観的な価値判断を、不効用という共通の尺度を用いて数学的に標準化・統合した結果として算出されたものです。
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-600 bg-white p-3 rounded border border-gray-200">
+              <strong>根拠論文:</strong><br/>
+              <ul className="list-disc pl-4 space-y-1 mt-1">
+                <li>Morgano GP, et al. Defining decision thresholds for judgments on health benefits and harms using the GRADE EtD frameworks: a randomized methodological study (GRADE-THRESHOLD). J Clin Epidemiol. 2024</li>
+                <li>Zeng L, et al. A novel framework for incorporating patient values and preferences in making guideline recommendations: guideline panel surveys. J Clin Epidemiol. 2023</li>
+              </ul>
+            </div>
+          </section>
+
+          <section className="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+            <h2 className="text-2xl font-bold text-indigo-900 flex items-center mb-4">
+              <Lightbulb className="w-8 h-8 mr-2 text-indigo-600" />
+              なぜ「 T = ベース値 / Disutility 」という割り算の式になるのか？
+            </h2>
+            <p className="mb-4 text-gray-800">
+              上記で導出されたベース値（T1=13.5等）をもとに、他のアウトカムの閾値は <strong>「ベースライン値 ÷ そのアウトカムのDisutility」</strong> という割り算で計算されます。<br/>
+              実は、GRADE Guidance 42の本来の論文内では、アンケートに基づく「線形回帰モデル（例：<code>T = 0.073 - 0.061 × Disutility</code>）」が提案されていました。では、なぜ実務ではこの「割り算」の式が使われるのでしょうか？
+            </p>
+
+            <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-indigo-500">
+              <h3 className="font-bold text-lg text-gray-800 mb-3 border-b pb-2">根拠：期待効用理論（Expected Utility Theory: EUT）</h3>
+              <p className="text-sm text-gray-700 mb-3">
+                Djulbegovicらの批判的コメントが指摘するように、意思決定の根幹である「期待効用理論（EUT）」に従うと、社会全体へのインパクト（期待効用の変化）は以下の式で表されます。
+              </p>
+              <div className="bg-gray-100 p-3 rounded text-center font-mono font-bold text-lg text-gray-800 mb-3">
+                社会へのインパクト = 確率（Rateの変化人数） × 不効用（Disutility）
+              </div>
+              <p className="text-sm text-gray-700 mb-3">
+                もし、最も重大な「死亡（Disutility = 1.0）」の閾値を <strong>13.5人</strong> と定めたとします。この時のインパクトの総量は <code>13.5 × 1.0 = 13.5</code> となります。<br/>
+                これと<strong>全く同じインパクト（= 13.5）</strong>を、重要度が半分（Disutility = 0.5）の副作用で出すためには何人必要でしょうか？
+              </p>
+              <div className="bg-indigo-100 p-3 rounded text-center font-mono font-bold text-gray-800 mb-3">
+                必要人数(N) × 0.5 = 13.5 <br/>
+                N = 13.5 ÷ 0.5 = 27.0人
+              </div>
+              <p className="text-sm text-indigo-900 font-bold">
+                結論：「T = ベース値 / Disutility」という割り算は、期待効用理論において『どれも等しく同じインパクトになる人数』を逆算するための、数学的に最も自然で論理的な変換式なのです。
+              </p>
+            </div>
+          </section>
+
+          <section className="bg-red-50 p-6 rounded-lg border border-red-200">
+            <h2 className="text-2xl font-bold text-red-900 flex items-center mb-4">
+              <MessageSquareWarning className="w-8 h-8 mr-2 text-red-600" />
+              専門家からの批判的吟味と警告（Limitations）
+            </h2>
+            <p className="mb-4 text-gray-800 text-sm">
+              この閾値アプローチに対し、Annals of Internal Medicine誌上で専門家から非常に重要な批判と議論が展開されています。このツールを使用する際は、以下の限界を必ず理解しておく必要があります。
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-2 text-base border-b pb-2">1. 線形モデルはEUTの公理に反する (Djulbegovic et al.)</h3>
+                <p className="text-sm text-gray-700">
+                  論文が当初提示した「線形回帰モデル」は、期待効用理論（確率×不効用）の数学的原則から逸脱しており「経験的にあり得ない（empirically implausible）」と批判されました。また、稀な致命的副作用を恐れて治療を推奨しないのはEUTではなく「後悔回避（regret-based）」などの別の論理によるものであり、ガイドラインはそれを透明にすべきだと指摘されています。
+                </p>
+              </div>
+
+              <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-2 text-base border-b pb-2">2. 固定されたDisutilityの非現実性 (Chen & Jørgensen)</h3>
+                <p className="text-sm text-gray-700">
+                  論文では「脳卒中 = 0.86」「死亡 = 0」と固定値を与えていますが、実際の価値観はスペクトラム上にあります。脳卒中の重症度は様々であり、「死亡」ですら終末期患者にとっては最悪の状態ではない場合があります。固定された係数を使うことは「過度な単純化」であると警告されています。
+                </p>
+              </div>
+
+              <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-2 text-base border-b pb-2">3. 「偽の正確性（False precision）」の危険性</h3>
+                <p className="text-sm text-gray-700">
+                  計算によって「32.1人」という閾値が出たからといって、32人なら「Small」、33人なら「Moderate」と人工的な境界線を引くことは危険です。科学は情報を提供できますが、人間の複雑な価値判断を機械的に代替することはできません。
+                </p>
+              </div>
+
+              <div className="bg-white p-5 rounded shadow-sm border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-2 text-base border-b pb-2">4. 医療資源・労力の無視 (Time Needed to Treat)</h3>
+                <p className="text-sm text-gray-700">
+                  閾値計算には、治療を実行するために必要な医療従事者の時間や労力（Time Needed to Treat: TNT）などの資源の観点が欠落していると指摘されています。利益が害を上回るからといって、リソース需要を無視して推奨することはできません。
+                </p>
+              </div>
+            </div>
+          </section>
+          
+          <div className="text-center mt-8">
+            <button onClick={() => setActiveTab('examples')} className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-indigo-700 transition">
+              次へ：文献掲載の具体例一覧へ
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================
+    // 3. 文献掲載アウトカム・計算例一覧セクション コンポーネント (詳細復元版)
+    // =========================================================
+    const ExamplesListSection = ({ setActiveTab }) => {
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-lg shadow-sm text-sm text-blue-900 mb-4">
+            <p className="font-bold mb-2 flex items-center text-base"><Info className="w-6 h-6 mr-2"/> このタブについて</p>
+            <p>GRADE Guidance 42の本文および付録（Appendix）に実際に掲載されている、具体的なアウトカムごとの閾値（DT）計算例を一覧化しました。論文内で用いられている<strong>3つの異なるアプローチ（A: 線形回帰, B: EUT/GDG調整, C: ユーティリティ逆算）</strong>に分けて詳細に整理しています。</p>
+          </div>
+
+          {/* アプローチA */}
+          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-bold text-indigo-900 mb-4 flex items-center border-b pb-2">
+              アプローチA：線形回帰モデルによる計算（本文 p.13, 15 / 付録 p.23-24）
+            </h3>
+            <p className="text-sm text-gray-700 mb-4">
+              GRADE-THRESHOLD調査から導き出された一次方程式を用いて直接計算するアプローチです。期待効用理論とは合致しませんが、論文が提示したオリジナルモデルです。<br/>
+              計算式例: <span className="font-mono bg-gray-100 px-2 py-1 rounded text-indigo-800 font-semibold border border-gray-200">T1 = 0.073 - (0.061 × Disutility)</span> 
+            </p>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left border-collapse border border-gray-200">
+                <thead className="bg-indigo-50 text-indigo-900 border-b-2 border-indigo-200">
+                  <tr>
+                    <th className="border p-3">アウトカム例 (掲載箇所)</th>
+                    <th className="border p-3 text-center">Utility</th>
+                    <th className="border p-3 text-center">Disutility</th>
+                    <th className="border p-3 text-center">T1 (Small)</th>
+                    <th className="border p-3 text-center">T2 (Moderate)</th>
+                    <th className="border p-3 text-center">T3 (Large)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-3 font-semibold">死亡 / Mortality<br/><span className="text-xs text-gray-500 font-normal">付録 p.24 Table 2</span></td>
+                    <td className="border p-3 text-center">0</td>
+                    <td className="border p-3 text-center font-bold text-indigo-700 bg-indigo-50/50">1.0</td>
+                    <td className="border p-3 text-center">12人 <br/><span className="text-xs text-gray-500">(0.012)</span></td>
+                    <td className="border p-3 text-center">34人 <br/><span className="text-xs text-gray-500">(0.034)</span></td>
+                    <td className="border p-3 text-center">67人 <br/><span className="text-xs text-gray-500">(0.067)</span></td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border p-3 font-semibold">肺塞栓症 (中等度)<br/><span className="text-xs text-gray-500 font-normal">本文 p.13 / 付録 p.23 Table 1</span></td>
+                    <td className="border p-3 text-center">0.42</td>
+                    <td className="border p-3 text-center font-bold text-indigo-700 bg-indigo-50/50">0.58</td>
+                    <td className="border p-3 text-center">38人 <br/><span className="text-xs text-gray-500">(0.038)</span></td>
+                    <td className="border p-3 text-center">95人 <br/><span className="text-xs text-gray-500">(0.095)</span></td>
+                    <td className="border p-3 text-center">181人 <br/><span className="text-xs text-gray-500">(0.181)</span></td>
+                  </tr>
+                  <tr>
+                    <td className="border p-3 font-semibold">上気道感染 / URTI<br/><span className="text-xs text-gray-500 font-normal">本文 p.13</span></td>
+                    <td className="border p-3 text-center">0.83</td>
+                    <td className="border p-3 text-center font-bold text-indigo-700 bg-indigo-50/50">0.17</td>
+                    <td className="border p-3 text-center">62人 <br/><span className="text-xs text-gray-500">(0.062)</span></td>
+                    <td className="border p-3 text-center">155人 <br/><span className="text-xs text-gray-500">(0.155)</span></td>
+                    <td className="border p-3 text-center">291人 <br/><span className="text-xs text-gray-500">(0.291)</span></td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border p-3 font-semibold">例示用ダミーアウトカム<br/><span className="text-xs text-gray-500 font-normal">本文 p.15 手動計算例</span></td>
+                    <td className="border p-3 text-center">0.4</td>
+                    <td className="border p-3 text-center font-bold text-indigo-700 bg-indigo-50/50">0.6</td>
+                    <td className="border p-3 text-center">36人 <br/><span className="text-xs text-gray-500">(0.036)</span></td>
+                    <td className="border p-3 text-center">92人 <br/><span className="text-xs text-gray-500">(0.092)</span></td>
+                    <td className="border p-3 text-center">175人 <br/><span className="text-xs text-gray-500">(0.175)</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* アプローチB */}
+          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-bold text-green-900 mb-4 flex items-center border-b pb-2">
+              アプローチB：期待効用（EUT）ベースの割り算 ＋ GDG調整（本文 p.28-29 WHO結核GL）
+            </h3>
+            <p className="text-sm text-gray-700 mb-4">
+              ベース閾値（T1≒13.5, T2≒32.1, T3≒62.5）を基準に、<span className="font-mono bg-gray-100 px-2 py-1 rounded text-green-800 font-semibold border border-gray-200">T = ベース値 ÷ Disutility</span> の計算を行い、さらに過去のガイドラインでの判断などを踏まえてガイドライン開発グループ（GDG）が微調整（Triangulation）した実践的な数値です。本ツールのシミュレーターはこの理論をベースにしています。
+            </p>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left border-collapse border border-gray-200">
+                <thead className="bg-green-50 text-green-900 border-b-2 border-green-200">
+                  <tr>
+                    <th className="border p-3">アウトカム例</th>
+                    <th className="border p-3 text-center">状態の<br/>Utility</th>
+                    <th className="border p-3 text-center">計算用<br/>Disutility</th>
+                    <th className="border p-3 text-center">T1 (Small)</th>
+                    <th className="border p-3 text-center">T2 (Moderate)</th>
+                    <th className="border p-3 text-center">T3 (Large)</th>
+                    <th className="border p-3">備考・計算の裏側</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-3 font-semibold">死亡<br/>(Death)</td>
+                    <td className="border p-3 text-center">0</td>
+                    <td className="border p-3 text-center font-bold text-green-700 bg-green-50/50">1.0</td>
+                    <td className="border p-3 text-center">14人</td>
+                    <td className="border p-3 text-center">32人</td>
+                    <td className="border p-3 text-center">63人</td>
+                    <td className="border p-3 text-xs text-gray-700 leading-relaxed">ベースライン値（13.5, 32.1, 62.5）を近似整数に丸めたもの。</td>
+                  </tr>
+                  <tr className="bg-red-50">
+                    <td className="border p-3 font-semibold text-red-900">持続的治療成功<br/>(Sustained success)</td>
+                    <td className="border p-3 text-center">0.9</td>
+                    <td className="border p-3 text-center font-bold text-red-600 bg-white border-2 border-red-300">0.9<br/><span className="text-[10px] text-gray-500 font-normal">※失敗(0.1)の不効用</span></td>
+                    <td className="border p-3 text-center font-bold text-red-900">15人</td>
+                    <td className="border p-3 text-center font-bold text-red-900">35人</td>
+                    <td className="border p-3 text-center font-bold text-red-900">68人</td>
+                    <td className="border p-3 text-xs text-gray-800 leading-relaxed">
+                      <strong className="text-red-700">【最重要の落とし穴】</strong> 良いアウトカムの評価であるため、そのままのUtility(0.9)を使わず、「失敗状態（Utility 0.1）」のDisutilityである0.9を用いて割り算を行っている。<br/>
+                      <span className="font-mono bg-white px-1 rounded font-normal text-gray-500">(例: 13.5 ÷ 0.9 = 15)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border p-3 font-semibold">治療失敗 / 有害事象<br/>(Failure, AEs)</td>
+                    <td className="border p-3 text-center">0.5</td>
+                    <td className="border p-3 text-center font-bold text-green-700 bg-green-50/50">0.5</td>
+                    <td className="border p-3 text-center">30人</td>
+                    <td className="border p-3 text-center">59人</td>
+                    <td className="border p-3 text-center">119人</td>
+                    <td className="border p-3 text-xs text-gray-700 leading-relaxed">
+                      単純な割り算（13.5 ÷ 0.5 = 27）とはズレがある。過去のWHOガイドラインとの整合性をとるためのGDG合意による調整値。
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* アプローチC */}
+          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-xl font-bold text-purple-900 mb-4 flex items-center border-b pb-2">
+              アプローチC：Utility閾値の逆算アプローチ（付録 p.26-27 MSIFガイドライン）
+            </h3>
+            <p className="text-sm text-gray-700 mb-4">
+              1000人あたりの人数（Rate）の閾値を出すのではなく、「実際の介入効果（Rateの変化）」を式に当てはめ、<strong>「その効果がSmallと判定されるための最大のUtility値（ユーティリティ閾値）」</strong>を逆算するアプローチです。
+            </p>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left border-collapse border border-gray-200">
+                <thead className="bg-purple-50 text-purple-900 border-b-2 border-purple-200">
+                  <tr>
+                    <th className="border p-3">アウトカム例</th>
+                    <th className="border p-3 text-center">介入効果<br/>(1000人あたり)</th>
+                    <th className="border p-3 text-center bg-purple-100">Small効果に必要な<br/>最大Utility閾値</th>
+                    <th className="border p-3 text-center">実際の<br/>Utility</th>
+                    <th className="border p-3">判定メカニズム</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-3 font-semibold">依存的障害 (EDSS 6)</td>
+                    <td className="border p-3 text-center text-blue-700 font-bold">51人減少</td>
+                    <td className="border p-3 text-center font-bold text-purple-800 bg-purple-50">0.64</td>
+                    <td className="border p-3 text-center font-bold text-gray-900">0.48</td>
+                    <td className="border p-3 text-xs text-gray-700 leading-relaxed">
+                      実際のUtility(0.48)が閾値(0.64)より低い（＝状態がより重大である）ため、51人の減少はSmall以上の価値があると判定。
+                    </td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border p-3 font-semibold">有害事象による治療中止</td>
+                    <td className="border p-3 text-center text-red-700 font-bold">45人増加</td>
+                    <td className="border p-3 text-center font-bold text-purple-800 bg-purple-50">0.54</td>
+                    <td className="border p-3 text-center font-bold text-gray-900">0.85</td>
+                    <td className="border p-3 text-xs text-gray-700 leading-relaxed">
+                      実際のUtility(0.85)が閾値(0.54)より高い（＝状態が重大でない）ため、45人増加してもSmallに満たない（Trivial）と判定。
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div className="text-center mt-8">
+            <button onClick={() => setActiveTab('calculator')} className="bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-green-700 transition">
+              次へ：閾値(DT)シミュレーターへ
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================
+    // 4. 計算ツールセクション コンポーネント
     // =========================================================
     const CalculatorSection = ({ outcomes, setOutcomes, setActiveTab }) => {
       const BASE_THRESHOLDS = { trivial: 13.5, small: 32.1, moderate: 62.5 };
-      
       const handleUpdate = (id, field, value) => {
         setOutcomes(outcomes.map(out => {
           if (out.id === id) {
@@ -156,47 +603,28 @@
           return out;
         }));
       };
-      
       const addOutcome = () => setOutcomes([...outcomes, { id: Math.max(...outcomes.map(o => o.id), 0) + 1, name: '新規アウトカム', utility: 0.5, overrideWeight: '', isBase: false, isWarning: false }]);
       const removeOutcome = (id) => setOutcomes(outcomes.filter(o => o.id !== id));
-      
       const calculateWeight = (outcome) => outcome.overrideWeight !== '' ? parseFloat(outcome.overrideWeight) : Math.max(0, 1 - outcome.utility);
       const calculateThreshold = (weight, baseThreshold) => weight <= 0 ? '∞' : (Math.round((baseThreshold / weight) * 10) / 10).toFixed(1);
 
       return (
         <div className="space-y-8 animate-fadeIn">
-          
           <div className="bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-600 p-6 rounded-xl shadow-sm mb-8">
-            <h2 className="text-xl font-bold text-green-900 mb-4 flex items-center">
-              <Calculator className="w-6 h-6 mr-2 text-green-700" />
-              意思決定閾値（DT）シミュレーター
-            </h2>
+            <h2 className="text-xl font-bold text-green-900 mb-4 flex items-center"><Calculator className="w-6 h-6 mr-2 text-green-700" />意思決定閾値（DT）シミュレーター</h2>
             <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-800">
               <div className="bg-white p-4 rounded-lg shadow-sm border border-green-200">
-                <h3 className="font-bold text-green-800 border-b border-green-100 pb-2 mb-2 flex items-center">
-                  <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
-                  入力のルール
-                </h3>
+                <h3 className="font-bold text-green-800 border-b border-green-100 pb-2 mb-2 flex items-center"><span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>入力のルール</h3>
                 <p className="mb-2">評価したいアウトカムの<strong>「不健康・失敗など悪い状態」のUtility（効用値）</strong>を入力してください。</p>
-                <div className="bg-red-50 p-2 rounded text-red-800 border border-red-200 text-xs">
-                  <strong className="flex items-center"><AlertTriangle className="w-3 h-3 mr-1"/> 良いアウトカム（成功等）を評価する場合</strong>
-                  成功のUtility(例:0.9)をそのまま入れると計算が破綻します。必ず反対の「失敗」のUtility(例:0.1)を入力してください。
-                </div>
+                <div className="bg-red-50 p-2 rounded text-red-800 border border-red-200 text-xs"><strong className="flex items-center"><AlertTriangle className="w-3 h-3 mr-1"/> 良いアウトカム（成功等）を評価する場合</strong>成功のUtility(例:0.9)をそのまま入れると計算が破綻します。必ず反対の「失敗」のUtility(例:0.1)を入力してください。</div>
               </div>
               <div className="bg-white p-4 rounded-lg shadow-sm border border-green-200">
-                <h3 className="font-bold text-blue-800 border-b border-blue-100 pb-2 mb-2 flex items-center">
-                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                  結果の見方
-                </h3>
+                <h3 className="font-bold text-blue-800 border-b border-blue-100 pb-2 mb-2 flex items-center"><span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>結果の見方</h3>
                 <p className="mb-2">入力されたUtilityから自動的に不効用（Disutility）が計算され、EUT（期待効用理論）に基づくベース値からの割り算が行われます。</p>
-                <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                  <span className="font-mono font-bold text-gray-800">T = 基準値(13.5等) ÷ Disutility</span><br/>
-                  算出された人数は「1000人あたり、これ以上の人数の差（増減）があれば、その効果はSmall(等)であると判定される」基準ラインです。
-                </p>
+                <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100"><span className="font-mono font-bold text-gray-800">T = 基準値(13.5等) ÷ Disutility</span><br/>算出された人数は「1000人あたり、これ以上の人数の差（増減）があれば、その効果はSmall(等)であると判定される」基準ラインです。</p>
               </div>
             </div>
           </div>
-
           <div className="space-y-6">
             {outcomes.map((outcome) => {
               const weight = calculateWeight(outcome);
@@ -207,141 +635,79 @@
 
               return (
                 <div key={outcome.id} className={`rounded-xl border-2 transition-all shadow-sm ${outcome.isBase ? 'border-gray-400 bg-gray-50' : outcome.isWarning ? 'border-red-400 bg-red-50' : 'border-green-200 bg-white'}`}>
-                  
-                  {/* カードヘッダー */}
                   <div className={`px-5 py-3 border-b flex items-center justify-between ${outcome.isBase ? 'bg-gray-200 border-gray-300' : outcome.isWarning ? 'bg-red-100 border-red-200' : 'bg-green-50 border-green-100'}`}>
-                    <div className="flex-1">
-                      <input 
-                        type="text" 
-                        value={outcome.name} 
-                        onChange={(e) => handleUpdate(outcome.id, 'name', e.target.value)} 
-                        className={`font-bold text-lg focus:outline-none w-full bg-transparent ${outcome.isWarning ? 'text-red-900' : 'text-gray-900'}`} 
-                        disabled={outcome.isBase}
-                        placeholder="アウトカム名（例：脳卒中、治療成功）"
-                      />
-                    </div>
-                    {!outcome.isBase && (
-                      <button onClick={() => removeOutcome(outcome.id)} className="text-gray-500 hover:text-red-600 text-sm bg-white/50 px-2 py-1 rounded transition">✕ 削除</button>
-                    )}
+                    <div className="flex-1"><input type="text" value={outcome.name} onChange={(e) => handleUpdate(outcome.id, 'name', e.target.value)} className={`font-bold text-lg focus:outline-none w-full bg-transparent ${outcome.isWarning ? 'text-red-900' : 'text-gray-900'}`} disabled={outcome.isBase} placeholder="アウトカム名（例：脳卒中、治療成功）"/></div>
+                    {!outcome.isBase && <button onClick={() => removeOutcome(outcome.id)} className="text-gray-500 hover:text-red-600 text-sm bg-white/50 px-2 py-1 rounded transition">✕ 削除</button>}
                   </div>
-
                   <div className="flex flex-col lg:flex-row p-5 gap-6">
-                    {/* 左側：入力エリア */}
                     <div className="flex-1 space-y-4">
-                      
                       <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
                         <div className="absolute top-0 left-0 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg rounded-tl-lg">STEP 1: 入力</div>
                         <div className="mt-3">
-                          <label className="block text-sm font-bold text-gray-800 mb-1">
-                            評価する <span className="text-red-600 underline">悪い状態</span> のUtility
-                          </label>
+                          <label className="block text-sm font-bold text-gray-800 mb-1">評価する <span className="text-red-600 underline">悪い状態</span> のUtility</label>
                           <p className="text-xs text-gray-500 mb-3">例: 死亡=0, 重い後遺症=0.4, 治療失敗=0.1</p>
                           <div className="flex items-center">
-                            <input 
-                              type="number" min="0" max="1" step="0.1" 
-                              value={outcome.utility} 
-                              onChange={(e) => handleUpdate(outcome.id, 'utility', parseFloat(e.target.value))} 
-                              className={`w-32 p-3 border-2 rounded-lg text-xl font-bold text-center focus:ring-2 focus:ring-blue-500 transition shadow-inner ${outcome.isWarning ? 'border-red-500 bg-red-50 text-red-900' : 'border-gray-300'}`} 
-                            />
+                            <input type="number" min="0" max="1" step="0.1" value={outcome.utility} onChange={(e) => handleUpdate(outcome.id, 'utility', parseFloat(e.target.value))} className={`w-32 p-3 border-2 rounded-lg text-xl font-bold text-center focus:ring-2 focus:ring-blue-500 transition shadow-inner ${outcome.isWarning ? 'border-red-500 bg-red-50 text-red-900' : 'border-gray-300'}`} />
                             <span className="ml-3 text-sm text-gray-600 font-semibold">(0 〜 1.0 の範囲)</span>
                           </div>
                         </div>
                       </div>
-
                       {outcome.isWarning && (
                         <div className="flex items-start text-sm text-red-800 font-bold bg-red-100 p-3 rounded-lg border border-red-300 shadow-sm animate-pulse">
                           <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-                          <p>
-                            警告：高いUtility（{outcome.utility}）が入力されています。<br/>
-                            「治療成功」などの良いアウトカムを評価しようとしていませんか？そのまま計算すると閾値が非現実的な数値になります。必ず反対の「失敗した状態」のUtilityを入力してください。
-                          </p>
+                          <p>警告：高いUtility（{outcome.utility}）が入力されています。<br/>「治療成功」などの良いアウトカムを評価しようとしていませんか？そのまま計算すると閾値が非現実的な数値になります。必ず反対の「失敗した状態」のUtilityを入力してください。</p>
                         </div>
                       )}
-
-                      <details className="text-sm">
-                        <summary className="cursor-pointer text-gray-500 hover:text-gray-800 font-semibold">詳細設定（手動でDisutilityを上書き）</summary>
+                      <details className="text-sm"><summary className="cursor-pointer text-gray-500 hover:text-gray-800 font-semibold">詳細設定（手動でDisutilityを上書き）</summary>
                         <div className="mt-2 bg-gray-50 p-3 rounded border border-gray-200">
                           <label className="block text-xs font-bold text-gray-700 mb-1">直接 Disutility を指定</label>
                           <input type="number" min="0" max="1" step="0.1" placeholder={`自動: 1 - ${outcome.utility}`} value={outcome.overrideWeight} onChange={(e) => handleUpdate(outcome.id, 'overrideWeight', e.target.value)} className="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-blue-500" />
                           {outcome.overrideWeight !== '' && <p className="text-xs text-orange-600 mt-1 font-bold">手動指定値（{outcome.overrideWeight}）で計算を上書き中</p>}
                         </div>
                       </details>
-
                     </div>
-
-                    {/* 右側：計算結果 */}
                     <div className="flex-1 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-200 shadow-inner flex flex-col justify-center relative">
                       <div className="absolute top-0 left-0 bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg rounded-tl-lg">STEP 2: 自動計算結果</div>
-                      
                       <div className="mt-2 mb-5 text-center border-b border-gray-200 pb-5">
                         <span className="text-sm font-bold text-gray-600 block mb-1">重要性の重み (Disutility)</span>
                         <div className="flex items-center justify-center text-gray-700 bg-white inline-flex px-4 py-2 rounded-full border border-gray-100 shadow-sm">
-                          {outcome.overrideWeight === '' && (
-                            <span className="text-sm font-mono text-gray-500 mr-3">1.0 - {outcome.utility} =</span>
-                          )}
-                          <span className={`text-3xl font-black ${outcome.isWarning ? 'text-red-600' : 'text-blue-700'}`}>
-                            {weightDisplay}
-                          </span>
+                          {outcome.overrideWeight === '' && <span className="text-sm font-mono text-gray-500 mr-3">1.0 - {outcome.utility} =</span>}
+                          <span className={`text-3xl font-black ${outcome.isWarning ? 'text-red-600' : 'text-blue-700'}`}>{weightDisplay}</span>
                         </div>
                       </div>
-                      
                       <div>
                         <span className="text-sm font-bold text-gray-800 block mb-3 text-center">1000人あたりの意思決定閾値（DT）</span>
-                        
                         <div className="grid grid-cols-3 gap-3">
-                          {/* T1 */}
                           <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow transition flex flex-col items-center">
                             <div className="text-xs text-gray-500 font-bold mb-1">T1 (Small)</div>
                             <div className="text-[10px] font-mono text-gray-400 mb-2 bg-gray-50 px-1 rounded">13.5 ÷ {weightDisplay}</div>
-                            <div className="text-2xl font-black text-gray-800 mb-1">
-                              {t1Val}
-                            </div>
-                            <div className="text-[10px] text-gray-500 text-center leading-tight">
-                              {t1Val !== '∞' ? `${t1Val}人以上の差で\nSmall効果` : '判定不可'}
-                            </div>
+                            <div className="text-2xl font-black text-gray-800 mb-1">{t1Val}</div>
+                            <div className="text-[10px] text-gray-500 text-center leading-tight">{t1Val !== '∞' ? `${t1Val}人以上の差で\nSmall効果` : '判定不可'}</div>
                           </div>
-                          
-                          {/* T2 */}
                           <div className="bg-white p-3 rounded-lg border border-blue-200 shadow-sm hover:shadow transition flex flex-col items-center">
                             <div className="text-xs text-blue-600 font-bold mb-1">T2 (Moderate)</div>
                             <div className="text-[10px] font-mono text-blue-400 mb-2 bg-blue-50 px-1 rounded">32.1 ÷ {weightDisplay}</div>
-                            <div className="text-2xl font-black text-blue-700 mb-1">
-                              {t2Val}
-                            </div>
-                            <div className="text-[10px] text-blue-600/70 text-center leading-tight">
-                              {t2Val !== '∞' ? `${t2Val}人以上の差で\nModerate効果` : '判定不可'}
-                            </div>
+                            <div className="text-2xl font-black text-blue-700 mb-1">{t2Val}</div>
+                            <div className="text-[10px] text-blue-600/70 text-center leading-tight">{t2Val !== '∞' ? `${t2Val}人以上の差で\nModerate効果` : '判定不可'}</div>
                           </div>
-
-                          {/* T3 */}
                           <div className="bg-white p-3 rounded-lg border border-green-200 shadow-sm hover:shadow transition flex flex-col items-center">
                             <div className="text-xs text-green-600 font-bold mb-1">T3 (Large)</div>
                             <div className="text-[10px] font-mono text-green-400 mb-2 bg-green-50 px-1 rounded">62.5 ÷ {weightDisplay}</div>
-                            <div className="text-2xl font-black text-green-700 mb-1">
-                              {t3Val}
-                            </div>
-                            <div className="text-[10px] text-green-600/70 text-center leading-tight">
-                              {t3Val !== '∞' ? `${t3Val}人以上の差で\nLarge効果` : '判定不可'}
-                            </div>
+                            <div className="text-2xl font-black text-green-700 mb-1">{t3Val}</div>
+                            <div className="text-[10px] text-green-600/70 text-center leading-tight">{t3Val !== '∞' ? `${t3Val}人以上の差で\nLarge効果` : '判定不可'}</div>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="hidden lg:flex absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1.5 shadow-md border border-gray-200 text-gray-400">
-                        <ArrowRight className="w-5 h-5" />
-                      </div>
+                      <div className="hidden lg:flex absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1.5 shadow-md border border-gray-200 text-gray-400"><ArrowRight className="w-5 h-5" /></div>
                     </div>
-
                   </div>
                 </div>
               );
             })}
           </div>
-          
           <button onClick={addOutcome} className="mt-8 w-full py-4 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:bg-green-50 hover:border-green-500 hover:text-green-700 transition-all font-bold text-lg flex items-center justify-center shadow-sm">
             <span className="text-2xl mr-2 leading-none">+</span> 評価するアウトカムを追加する
           </button>
-
           <div className="text-center mt-10 pt-8 border-t border-gray-200">
             <p className="text-gray-600 mb-5 font-semibold">ここで計算した結果を使って、次のタブで視覚的な判定グラフを作成・保存できます。</p>
             <button onClick={() => setActiveTab('graphical')} className="bg-rose-600 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-rose-700 hover:scale-105 transform transition flex items-center mx-auto text-lg">
@@ -447,7 +813,7 @@
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                     <label className="block text-sm font-bold text-gray-800 mb-2">点推定値 (Point Estimate)</label>
                     <div className="flex items-center gap-3">
-                      <input type="range" min="-100" max="100" value={pe} onChange={(e) => setPe(Number(e.target.value))} className="flex-1" />
+                      <input type="range" min="-100" max="100" value={pe} onChange={(e) => setPe(Number(e.target.value))} className="flex-1 accent-blue-600" />
                       <input type="number" value={pe} onChange={(e) => setPe(Number(e.target.value))} className="w-20 p-2 text-base font-bold border-2 border-blue-300 rounded text-center focus:outline-none focus:border-blue-600 bg-white" />
                     </div>
                   </div>
@@ -534,102 +900,6 @@
               </button>
             </div>
           </div>
-        </div>
-      );
-    };
-
-    // =========================================================
-    // その他セクション（概念、根拠、文献例）
-    // =========================================================
-    const ExplanationSection = ({ setActiveTab }) => {
-      return (
-        <div className="space-y-10 animate-fadeIn">
-          <section>
-            <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-4">大前提：「Utility（状態）」と「Rate（率）」は全く別の概念です</h2>
-            <div className="bg-blue-50 p-5 rounded-lg border border-blue-100 flex flex-col md:flex-row gap-6 mb-6">
-              <div className="flex-1 bg-white p-4 rounded shadow-sm border-t-4 border-blue-400">
-                <h3 className="font-bold text-blue-800 mb-2 text-lg flex items-center"><Activity className="w-5 h-5 mr-2" />① Utility（効用値）＝「状態」のスコア</h3>
-                <p className="text-sm text-gray-700 mb-2">生存と死亡の間にある<strong>「状態の質」</strong>を、死亡を「0」、完全な健康を「1」として表した固定値です。</p>
-                <p className="text-sm text-red-600 font-bold mt-2">⚠️ 決して「死亡率を0、生存率を1としたもの」ではありません！</p>
-              </div>
-              <div className="flex-1 bg-white p-4 rounded shadow-sm border-t-4 border-green-400">
-                <h3 className="font-bold text-green-800 mb-2 text-lg flex items-center"><Scale className="w-5 h-5 mr-2" />② Rate（率）＝「人数の割合」</h3>
-                <p className="text-sm text-gray-700 mb-2">特定のUtilityを持つ「状態の箱」に入った人数の割合（確率）です。</p>
-                <p className="text-sm text-green-800 font-bold bg-green-50 p-2 rounded mt-2">「死亡率が5%下がる」と「生存率が5%上がる」は、全く同じ現象（人の移動）です。</p>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-purple-500 pl-3 mb-4">「Utility（状態）」と「閾値における利益・害」の違い</h2>
-            <p className="text-sm text-gray-700"><strong>閾値における「利益・害」とは、Utilityの点数ではなく、「イベントが何人増えたか・減ったか」の話</strong>です。<br/>悪いイベントが減れば「利益」、増えれば「害」です。</p>
-          </section>
-
-          <section className="bg-orange-50 p-6 rounded-lg border-2 border-orange-300">
-            <h2 className="text-xl font-bold text-orange-900 flex items-center mb-4"><Search className="w-6 h-6 mr-2" />核心的な矛盾：良いアウトカム（生存・成功）をどう計算するか？</h2>
-            <div className="bg-white p-4 rounded shadow-sm mb-4 border-l-4 border-red-500">
-              <h3 className="font-bold text-gray-800 mb-2">もし「治療成功（Utility = 0.9）」をそのまま数式に入れたら？</h3>
-              <p className="text-sm text-gray-700">Disutilityは <strong>0.1</strong> になります。これでは「治療成功は死亡の10分の1の価値しかない」と判定され、閾値が異常に膨れ上がります。</p>
-            </div>
-            <div className="bg-white p-4 rounded shadow-sm border-l-4 border-green-500">
-              <h3 className="font-bold text-gray-800 mb-2">【結論】「逆の悪い状態」で計算する</h3>
-              <p className="text-sm text-gray-700"><span className="text-red-600 underline font-bold">良いアウトカムの増減（利益）を評価する場合は、必ず「逆の悪いアウトカム（不健康・失敗）」のUtilityに置き換えて計算しなければ、数学的に破綻します。</span></p>
-            </div>
-          </section>
-        </div>
-      );
-    };
-
-    const TheoryAndCritiqueSection = ({ setActiveTab }) => {
-      return (
-        <div className="space-y-10 animate-fadeIn">
-          <section className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-            <h2 className="text-2xl font-bold text-blue-900 flex items-center mb-4"><Database className="w-8 h-8 mr-2 text-blue-600" />ベース値（13.5, 32.1, 62.5）はどこから算出されたのか？</h2>
-            <p className="text-sm text-gray-700">「GRADE-THRESHOLD」というステークホルダーへの大規模アンケート調査に基づき、線形回帰モデルから導き出された全体的な平均値（汎用係数）です。</p>
-          </section>
-          <section className="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
-            <h2 className="text-2xl font-bold text-indigo-900 flex items-center mb-4"><Lightbulb className="w-8 h-8 mr-2 text-indigo-600" />なぜ「 T = ベース値 / Disutility 」という割り算の式になるのか？</h2>
-            <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-indigo-500">
-              <h3 className="font-bold text-lg text-gray-800 mb-3 border-b pb-2">根拠：期待効用理論（EUT）</h3>
-              <div className="bg-gray-100 p-3 rounded text-center font-mono font-bold text-lg text-gray-800 mb-3">社会へのインパクト = Rateの変化人数 × Disutility</div>
-              <p className="text-sm text-indigo-900 font-bold">結論：「T = ベース値 / Disutility」という割り算は、期待効用理論において『どれも等しく同じインパクトになる人数』を逆算するための、論理的な変換式です。</p>
-            </div>
-          </section>
-          <section className="bg-red-50 p-6 rounded-lg border border-red-200">
-            <h2 className="text-2xl font-bold text-red-900 flex items-center mb-4"><MessageSquareWarning className="w-8 h-8 mr-2 text-red-600" />専門家からの批判的吟味と警告</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded shadow-sm border border-gray-200"><p className="text-sm">1. 線形モデルはEUTの公理に反する (Djulbegovic et al.)</p></div>
-              <div className="bg-white p-4 rounded shadow-sm border border-gray-200"><p className="text-sm">2. 固定されたDisutilityの非現実性 (Chen & Jørgensen)</p></div>
-              <div className="bg-white p-4 rounded shadow-sm border border-gray-200"><p className="text-sm">3. 「偽の正確性（False precision）」の危険性</p></div>
-              <div className="bg-white p-4 rounded shadow-sm border border-gray-200"><p className="text-sm">4. 医療資源・労力の無視 (Time Needed to Treat)</p></div>
-            </div>
-          </section>
-        </div>
-      );
-    };
-
-    const ExamplesListSection = ({ setActiveTab }) => {
-      return (
-        <div className="space-y-8 animate-fadeIn">
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-sm text-blue-900"><p>GRADE Guidance 42の本文および付録に掲載されている、3つのアプローチごとの計算例です。</p></div>
-          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-bold text-indigo-900 mb-4 border-b pb-2">アプローチA：線形回帰モデルによる計算</h3>
-            <p className="text-sm text-gray-700 mb-4">式例: <span className="font-mono bg-gray-100 px-1 rounded font-semibold">T1 = 0.073 - (0.061 × Disutility)</span></p>
-            <div className="overflow-x-auto"><table className="min-w-full text-sm text-left border-collapse border border-gray-200">
-              <thead className="bg-indigo-50 border-b-2 border-indigo-200"><tr><th className="border p-2">アウトカム</th><th className="border p-2">Utility</th><th className="border p-2">Disutility</th><th className="border p-2">T1</th></tr></thead>
-              <tbody><tr><td className="border p-2">死亡</td><td className="border p-2">0</td><td className="border p-2">1.0</td><td className="border p-2">12人</td></tr></tbody>
-            </table></div>
-          </section>
-          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-bold text-green-900 mb-4 border-b pb-2">アプローチB：EUTベースの割り算 ＋ GDG調整</h3>
-            <div className="overflow-x-auto"><table className="min-w-full text-sm text-left border-collapse border border-gray-200">
-              <thead className="bg-green-50 border-b-2 border-green-200"><tr><th className="border p-2">アウトカム</th><th className="border p-2">Utility</th><th className="border p-2">Disutility</th><th className="border p-2">T1</th></tr></thead>
-              <tbody>
-                <tr><td className="border p-2">死亡</td><td className="border p-2">0</td><td className="border p-2">1.0</td><td className="border p-2">14人</td></tr>
-                <tr className="bg-red-50"><td className="border p-2 text-red-900 font-bold">治療成功</td><td className="border p-2">0.9</td><td className="border p-2 text-red-600 font-bold">0.9(※失敗の不効用)</td><td className="border p-2 text-red-900 font-bold">15人</td></tr>
-              </tbody>
-            </table></div>
-          </section>
         </div>
       );
     };
