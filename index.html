@@ -227,6 +227,48 @@
             </p>
           </section>
 
+          {/* ★追加：重要度とUtilityの違いと相関のセクション */}
+          <section className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+            <h2 className="text-2xl font-bold text-yellow-900 border-l-4 border-yellow-500 pl-3 mb-4">
+              「Utility（効用値）」と「アウトカムの重要度（Importance）」の違いと相関
+            </h2>
+            <p className="mb-4 text-gray-700">
+              GRADEアプローチで頻出する<strong>「アウトカムの重要度（Importance）」</strong>と<strong>「Utility（効用値）」</strong>も、混同しやすい概念です。
+            </p>
+
+            <div className="bg-white p-5 rounded shadow-sm border border-yellow-100 mb-4">
+              <h3 className="font-bold text-gray-800 mb-2 border-b pb-2">違い：評価スケールと「重要度」の捉え方</h3>
+              <p className="text-sm text-gray-700 mb-2">
+                GRADEでは通常、アウトカムの重要度を<strong>1〜9のスケール</strong>（7〜9が意思決定において「決定的：Critical」など）で評価します。一方、Utilityは<strong>0〜1のスケール</strong>です。このように、基本となる数値の比率（スケール）が異なります。
+              </p>
+              <p className="text-sm text-gray-700">
+                また、「死亡率」も「生存率」も、意思決定におけるアウトカムの「重要度」としてはどちらも最高の9（決定的）になります。しかし、Utilityの観点では、死亡状態は0、健康状態（生存）は1と、数値が全く逆になります。そのため「死亡が0、健康が1」というUtilityの話と、「どちらも重要度が高い」というアウトカムの重要度の話は本来異なるものです。
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded shadow-sm border border-yellow-100 mb-4">
+              <h3 className="font-bold text-gray-800 mb-2 border-b pb-2">相関：すべてを「悪い状態」に揃えたときのメカニズム</h3>
+              <p className="text-sm text-gray-700 mb-2">
+                しかし、このDT（閾値）計算の文脈において、すべてのアウトカムを<strong>「悪いことが増える（害・不健康）」の方向に揃えて評価するならば</strong>、アウトカムの重要度とUtilityはかなり強く相関することになります。
+              </p>
+              <p className="text-sm text-gray-700 mb-2">
+                つまり、<strong>「悪い状態のUtilityが0（死）に近いほど、その悪いイベント（害）を防ぐことの『重要度』は高くなる」</strong>という関係です。
+              </p>
+              <div className="bg-gray-50 p-3 rounded border border-gray-200 mt-2">
+                <p className="text-sm text-gray-800 italic mb-1">
+                  "The closer an outcome's utility value is to 0, the more important the outcome would be considered for decision making." (Guidance 42, Page 11-12)
+                </p>
+                <p className="text-xs text-gray-600">
+                  （訳：アウトカムのUtility値が0に近いほど、そのアウトカムは意思決定においてより重要であると見なされる。）
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-700">
+              最終的に、GRADEの閾値計算では<strong>「Disutility（不効用） = 1 - Utility」</strong>という式を使うことで、この「Utilityの低さ」をそのまま「それを防ぐ重要性の高さ（重み）」として数式に反映させています。
+            </p>
+          </section>
+
           <section className="bg-orange-50 p-6 rounded-lg border-2 border-orange-300">
             <h2 className="text-xl font-bold text-orange-900 flex items-center mb-4">
               <Search className="w-6 h-6 mr-2" />
@@ -599,7 +641,7 @@
     };
 
     // =========================================================
-    // 4. 計算ツールセクション コンポーネント (★今回UIアップデート)
+    // 4. 計算ツールセクション コンポーネント
     // =========================================================
     const CalculatorSection = ({ outcomes, setOutcomes, setActiveTab, baseThresholds, setBaseThresholds }) => {
       
@@ -619,7 +661,6 @@
       const calculateWeight = (outcome) => outcome.overrideWeight !== '' ? parseFloat(outcome.overrideWeight) : Math.max(0, 1 - outcome.utility);
       const calculateThreshold = (weight, baseThreshold) => weight <= 0 ? '∞' : (Math.round((baseThreshold / weight) * 10) / 10).toFixed(1);
 
-      // ★ベース閾値のリセット関数
       const resetBaseThresholds = () => {
         setBaseThresholds({ trivial: 13.5, small: 32.1, moderate: 62.5 });
       };
@@ -627,7 +668,6 @@
       return (
         <div className="space-y-8 animate-fadeIn">
           
-          {/* ★追加：ベース閾値のカスタマイズパネル */}
           <div className="bg-white p-5 rounded-xl border border-gray-300 shadow-sm mb-8">
             <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
               <h3 className="font-bold text-gray-800 flex items-center">
