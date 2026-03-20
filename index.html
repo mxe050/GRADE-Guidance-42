@@ -16,7 +16,6 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* アニメーション用クラス */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -28,14 +27,12 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
   
-  <!-- アプリを描画する場所 -->
   <div id="root"></div>
 
-  <!-- Reactアプリのコード -->
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- アイコンコンポーネントの定義 (LucideのSVGを直接埋め込み) ---
+    // --- アイコンコンポーネント ---
     const Icon = ({ path, className }) => (
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         {path}
@@ -64,7 +61,7 @@
 
     // --- メインアプリケーション ---
     const App = () => {
-      // ★修正：初期タブを「1. 概念と落とし穴（explanation）」に設定
+      // 正しく「1. 概念と落とし穴（explanation）」が初期タブに設定されています。
       const [activeTab, setActiveTab] = useState('explanation'); 
       
       const [outcomes, setOutcomes] = useState([
@@ -144,6 +141,221 @@
 
     // --- 各セクションコンポーネント ---
 
+    // =========================================================
+    // 4. 計算ツール（シミュレーター）セクション - 大幅UI改善
+    // =========================================================
+    const CalculatorSection = ({ outcomes, setOutcomes, setActiveTab }) => {
+      const BASE_THRESHOLDS = { trivial: 13.5, small: 32.1, moderate: 62.5 };
+      
+      const handleUpdate = (id, field, value) => {
+        setOutcomes(outcomes.map(out => {
+          if (out.id === id) {
+            const isWarning = field === 'utility' && value > 0.8;
+            return { ...out, [field]: value, ...(field === 'utility' && { isWarning }) };
+          }
+          return out;
+        }));
+      };
+      
+      const addOutcome = () => setOutcomes([...outcomes, { id: Math.max(...outcomes.map(o => o.id), 0) + 1, name: '新規アウトカム', utility: 0.5, overrideWeight: '', isBase: false, isWarning: false }]);
+      const removeOutcome = (id) => setOutcomes(outcomes.filter(o => o.id !== id));
+      
+      const calculateWeight = (outcome) => outcome.overrideWeight !== '' ? parseFloat(outcome.overrideWeight) : Math.max(0, 1 - outcome.utility);
+      const calculateThreshold = (weight, baseThreshold) => weight <= 0 ? '∞' : (Math.round((baseThreshold / weight) * 10) / 10).toFixed(1);
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          
+          <div className="bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-600 p-6 rounded-xl shadow-sm mb-8">
+            <h2 className="text-xl font-bold text-green-900 mb-4 flex items-center">
+              <Calculator className="w-6 h-6 mr-2 text-green-700" />
+              意思決定閾値（DT）シミュレーター
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-800">
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-green-200">
+                <h3 className="font-bold text-green-800 border-b border-green-100 pb-2 mb-2 flex items-center">
+                  <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
+                  入力のルール
+                </h3>
+                <p className="mb-2">評価したいアウトカムの<strong>「不健康・失敗など悪い状態」のUtility（効用値）</strong>を入力してください。</p>
+                <div className="bg-red-50 p-2 rounded text-red-800 border border-red-200 text-xs">
+                  <strong className="flex items-center"><AlertTriangle className="w-3 h-3 mr-1"/> 良いアウトカム（成功等）を評価する場合</strong>
+                  成功のUtility(例:0.9)をそのまま入れると計算が破綻します。必ず反対の「失敗」のUtility(例:0.1)を入力してください。
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-green-200">
+                <h3 className="font-bold text-blue-800 border-b border-blue-100 pb-2 mb-2 flex items-center">
+                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+                  結果の見方
+                </h3>
+                <p className="mb-2">入力されたUtilityから自動的に不効用（Disutility）が計算され、EUT（期待効用理論）に基づくベース値からの割り算が行われます。</p>
+                <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                  <span className="font-mono font-bold text-gray-800">T = 基準値(13.5等) ÷ Disutility</span><br/>
+                  算出された人数は「1000人あたり、これ以上の人数の差（増減）があれば、その効果はSmall(等)であると判定される」基準ラインです。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {outcomes.map((outcome) => {
+              const weight = calculateWeight(outcome);
+              const weightDisplay = isNaN(weight) ? 0 : weight.toFixed(2);
+              const t1Val = calculateThreshold(weight, BASE_THRESHOLDS.trivial);
+              const t2Val = calculateThreshold(weight, BASE_THRESHOLDS.small);
+              const t3Val = calculateThreshold(weight, BASE_THRESHOLDS.moderate);
+
+              return (
+                <div key={outcome.id} className={`rounded-xl border-2 transition-all shadow-sm ${outcome.isBase ? 'border-gray-400 bg-gray-50' : outcome.isWarning ? 'border-red-400 bg-red-50' : 'border-green-200 bg-white'}`}>
+                  
+                  {/* カードヘッダー */}
+                  <div className={`px-5 py-3 border-b flex items-center justify-between ${outcome.isBase ? 'bg-gray-200 border-gray-300' : outcome.isWarning ? 'bg-red-100 border-red-200' : 'bg-green-50 border-green-100'}`}>
+                    <div className="flex-1">
+                      <input 
+                        type="text" 
+                        value={outcome.name} 
+                        onChange={(e) => handleUpdate(outcome.id, 'name', e.target.value)} 
+                        className={`font-bold text-lg focus:outline-none w-full bg-transparent ${outcome.isWarning ? 'text-red-900' : 'text-gray-900'}`} 
+                        disabled={outcome.isBase}
+                        placeholder="アウトカム名（例：脳卒中、治療成功）"
+                      />
+                    </div>
+                    {!outcome.isBase && (
+                      <button onClick={() => removeOutcome(outcome.id)} className="text-gray-500 hover:text-red-600 text-sm bg-white/50 px-2 py-1 rounded transition">✕ 削除</button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col lg:flex-row p-5 gap-6">
+                    {/* 左側：入力エリア */}
+                    <div className="flex-1 space-y-4">
+                      
+                      <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+                        <div className="absolute top-0 left-0 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg rounded-tl-lg">STEP 1: 入力</div>
+                        <div className="mt-3">
+                          <label className="block text-sm font-bold text-gray-800 mb-1">
+                            評価する <span className="text-red-600 underline">悪い状態</span> のUtility
+                          </label>
+                          <p className="text-xs text-gray-500 mb-3">例: 死亡=0, 重い後遺症=0.4, 治療失敗=0.1</p>
+                          <div className="flex items-center">
+                            <input 
+                              type="number" min="0" max="1" step="0.1" 
+                              value={outcome.utility} 
+                              onChange={(e) => handleUpdate(outcome.id, 'utility', parseFloat(e.target.value))} 
+                              className={`w-32 p-3 border-2 rounded-lg text-xl font-bold text-center focus:ring-2 focus:ring-blue-500 transition shadow-inner ${outcome.isWarning ? 'border-red-500 bg-red-50 text-red-900' : 'border-gray-300'}`} 
+                            />
+                            <span className="ml-3 text-sm text-gray-600 font-semibold">(0 〜 1.0 の範囲)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {outcome.isWarning && (
+                        <div className="flex items-start text-sm text-red-800 font-bold bg-red-100 p-3 rounded-lg border border-red-300 shadow-sm animate-pulse">
+                          <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                          <p>
+                            警告：高いUtility（{outcome.utility}）が入力されています。<br/>
+                            「治療成功」などの良いアウトカムを評価しようとしていませんか？そのまま計算すると閾値が非現実的な数値になります。必ず反対の「失敗した状態」のUtilityを入力してください。
+                          </p>
+                        </div>
+                      )}
+
+                      <details className="text-sm">
+                        <summary className="cursor-pointer text-gray-500 hover:text-gray-800 font-semibold">詳細設定（手動でDisutilityを上書き）</summary>
+                        <div className="mt-2 bg-gray-50 p-3 rounded border border-gray-200">
+                          <label className="block text-xs font-bold text-gray-700 mb-1">直接 Disutility を指定</label>
+                          <input type="number" min="0" max="1" step="0.1" placeholder={`自動: 1 - ${outcome.utility}`} value={outcome.overrideWeight} onChange={(e) => handleUpdate(outcome.id, 'overrideWeight', e.target.value)} className="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-blue-500" />
+                          {outcome.overrideWeight !== '' && <p className="text-xs text-orange-600 mt-1 font-bold">手動指定値（{outcome.overrideWeight}）で計算を上書き中</p>}
+                        </div>
+                      </details>
+
+                    </div>
+
+                    {/* 右側：計算結果 */}
+                    <div className="flex-1 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-200 shadow-inner flex flex-col justify-center relative">
+                      <div className="absolute top-0 left-0 bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg rounded-tl-lg">STEP 2: 自動計算結果</div>
+                      
+                      <div className="mt-2 mb-5 text-center border-b border-gray-200 pb-5">
+                        <span className="text-sm font-bold text-gray-600 block mb-1">重要性の重み (Disutility)</span>
+                        <div className="flex items-center justify-center text-gray-700 bg-white inline-flex px-4 py-2 rounded-full border border-gray-100 shadow-sm">
+                          {outcome.overrideWeight === '' && (
+                            <span className="text-sm font-mono text-gray-500 mr-3">1.0 - {outcome.utility} =</span>
+                          )}
+                          <span className={`text-3xl font-black ${outcome.isWarning ? 'text-red-600' : 'text-blue-700'}`}>
+                            {weightDisplay}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <span className="text-sm font-bold text-gray-800 block mb-3 text-center">1000人あたりの意思決定閾値（DT）</span>
+                        
+                        <div className="grid grid-cols-3 gap-3">
+                          {/* T1 */}
+                          <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow transition flex flex-col items-center">
+                            <div className="text-xs text-gray-500 font-bold mb-1">T1 (Small)</div>
+                            <div className="text-[10px] font-mono text-gray-400 mb-2 bg-gray-50 px-1 rounded">13.5 ÷ {weightDisplay}</div>
+                            <div className="text-2xl font-black text-gray-800 mb-1">
+                              {t1Val}
+                            </div>
+                            <div className="text-[10px] text-gray-500 text-center leading-tight">
+                              {t1Val !== '∞' ? `${t1Val}人以上の差で\nSmall効果` : '判定不可'}
+                            </div>
+                          </div>
+                          
+                          {/* T2 */}
+                          <div className="bg-white p-3 rounded-lg border border-blue-200 shadow-sm hover:shadow transition flex flex-col items-center">
+                            <div className="text-xs text-blue-600 font-bold mb-1">T2 (Moderate)</div>
+                            <div className="text-[10px] font-mono text-blue-400 mb-2 bg-blue-50 px-1 rounded">32.1 ÷ {weightDisplay}</div>
+                            <div className="text-2xl font-black text-blue-700 mb-1">
+                              {t2Val}
+                            </div>
+                            <div className="text-[10px] text-blue-600/70 text-center leading-tight">
+                              {t2Val !== '∞' ? `${t2Val}人以上の差で\nModerate効果` : '判定不可'}
+                            </div>
+                          </div>
+
+                          {/* T3 */}
+                          <div className="bg-white p-3 rounded-lg border border-green-200 shadow-sm hover:shadow transition flex flex-col items-center">
+                            <div className="text-xs text-green-600 font-bold mb-1">T3 (Large)</div>
+                            <div className="text-[10px] font-mono text-green-400 mb-2 bg-green-50 px-1 rounded">62.5 ÷ {weightDisplay}</div>
+                            <div className="text-2xl font-black text-green-700 mb-1">
+                              {t3Val}
+                            </div>
+                            <div className="text-[10px] text-green-600/70 text-center leading-tight">
+                              {t3Val !== '∞' ? `${t3Val}人以上の差で\nLarge効果` : '判定不可'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="hidden lg:flex absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1.5 shadow-md border border-gray-200 text-gray-400">
+                        <ArrowRight className="w-5 h-5" />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <button onClick={addOutcome} className="mt-8 w-full py-4 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:bg-green-50 hover:border-green-500 hover:text-green-700 transition-all font-bold text-lg flex items-center justify-center shadow-sm">
+            <span className="text-2xl mr-2 leading-none">+</span> 評価するアウトカムを追加する
+          </button>
+
+          <div className="text-center mt-10 pt-8 border-t border-gray-200">
+            <p className="text-gray-600 mb-5 font-semibold">ここで計算した結果を使って、次のタブで視覚的な判定グラフを作成・保存できます。</p>
+            <button onClick={() => setActiveTab('graphical')} className="bg-rose-600 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-rose-700 hover:scale-105 transform transition flex items-center mx-auto text-lg">
+              <BarChart className="w-6 h-6 mr-2" />
+              5. グラフ生成＆保存機能へ進む
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================
+    // 5. グラフ生成＆保存セクション コンポーネント
+    // =========================================================
     const GraphicalSection = ({ outcomes }) => {
       const [selectedId, setSelectedId] = useState(outcomes[0]?.id || 1);
       const [pe, setPe] = useState(-10);
@@ -222,7 +434,7 @@
                 <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-rose-500 focus:outline-none">
                   {outcomes.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">※新しいアウトカムは「4.計算」タブで追加できます。</p>
+                <p className="text-xs text-gray-500 mt-1">※新しいアウトカムは「4.シミュレーター」タブで追加できます。</p>
               </div>
 
               <div className="pt-4 border-t border-gray-100">
@@ -326,6 +538,9 @@
       );
     };
 
+    // =========================================================
+    // その他セクション（概念、根拠、文献例）
+    // =========================================================
     const ExplanationSection = ({ setActiveTab }) => {
       return (
         <div className="space-y-10 animate-fadeIn">
@@ -415,70 +630,6 @@
               </tbody>
             </table></div>
           </section>
-        </div>
-      );
-    };
-
-    const CalculatorSection = ({ outcomes, setOutcomes, setActiveTab }) => {
-      const BASE_THRESHOLDS = { trivial: 13.5, small: 32.1, moderate: 62.5 };
-      const handleUpdate = (id, field, value) => {
-        setOutcomes(outcomes.map(out => {
-          if (out.id === id) {
-            const isWarning = field === 'utility' && value > 0.8;
-            return { ...out, [field]: value, ...(field === 'utility' && { isWarning }) };
-          }
-          return out;
-        }));
-      };
-      const addOutcome = () => setOutcomes([...outcomes, { id: Math.max(...outcomes.map(o => o.id), 0) + 1, name: '新規アウトカム', utility: 0.5, overrideWeight: '', isBase: false, isWarning: false }]);
-      const removeOutcome = (id) => setOutcomes(outcomes.filter(o => o.id !== id));
-      const calculateWeight = (outcome) => outcome.overrideWeight !== '' ? parseFloat(outcome.overrideWeight) : Math.max(0, 1 - outcome.utility);
-      const calculateThreshold = (weight, baseThreshold) => weight <= 0 ? '∞' : (Math.round((baseThreshold / weight) * 10) / 10).toFixed(1);
-
-      return (
-        <div className="space-y-8 animate-fadeIn">
-          <div className="bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-500 p-5 rounded-lg shadow-sm mb-8">
-            <h2 className="text-xl font-bold text-green-900 mb-3 flex items-center"><Lightbulb className="w-6 h-6 mr-2 text-green-600" />シミュレーターの正しい使い方</h2>
-            <ol className="list-decimal pl-5 space-y-3 text-gray-800">
-              <li><strong>アウトカム名</strong> と対象となる <strong>悪い状態のUtility</strong> を入力します。<br/><span className="text-red-600 text-sm font-bold">🚨良い結果の増減（利益）を評価する場合は、必ず「反対の悪い状態」のUtilityを入力してください。</span></li>
-              <li>右側に <strong> T = 基準値 ÷ Disutility </strong> の式を用いて、閾値（人数）が自動計算されます。</li>
-            </ol>
-          </div>
-          <div className="space-y-6">
-            {outcomes.map((outcome) => {
-              const weight = calculateWeight(outcome);
-              const weightDisplay = isNaN(weight) ? 0 : weight.toFixed(2);
-              return (
-                <div key={outcome.id} className={`p-5 rounded-xl border-2 transition-all ${outcome.isBase ? 'border-gray-800 bg-gray-50' : outcome.isWarning ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <input type="text" value={outcome.name} onChange={(e) => handleUpdate(outcome.id, 'name', e.target.value)} className="font-bold text-xl border-b-2 border-dashed focus:outline-none w-full mr-2 bg-transparent" disabled={outcome.isBase}/>
-                        {!outcome.isBase && <button onClick={() => removeOutcome(outcome.id)} className="text-gray-400 hover:text-red-600 text-sm">✕ 削除</button>}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 bg-white/50 p-3 rounded-lg border border-gray-100">
-                        <div><label className="block text-xs font-bold text-gray-700 mb-1">状態のUtility</label><input type="number" min="0" max="1" step="0.1" value={outcome.utility} onChange={(e) => handleUpdate(outcome.id, 'utility', parseFloat(e.target.value))} className="w-full p-2 border-2 rounded-lg text-lg font-semibold" /></div>
-                        <div><label className="block text-xs font-bold text-gray-700 mb-1">手動Disutility(上書き)</label><input type="number" min="0" max="1" step="0.1" value={outcome.overrideWeight} onChange={(e) => handleUpdate(outcome.id, 'overrideWeight', e.target.value)} className="w-full p-2 border-2 rounded-lg text-sm bg-gray-50" /></div>
-                      </div>
-                      {outcome.isWarning && <p className="text-xs text-red-600 font-bold">⚠️ 警告：高いUtilityが入力されています。もし「治療成功」などの場合、必ず「失敗」など逆の悪い状態のUtilityを入力してください。</p>}
-                    </div>
-                    <div className="flex-1 bg-white p-5 rounded-xl border border-gray-200 shadow-inner flex flex-col justify-center text-center">
-                      <div className="mb-4 border-b border-gray-100 pb-4"><span className="text-xs font-bold text-gray-500 block mb-1">重要性の重み (Disutility)</span><span className="text-4xl font-black text-blue-700">{weightDisplay}</span></div>
-                      <div>
-                        <span className="text-xs font-bold text-gray-500 block mb-2">1000人あたりの意思決定閾値</span>
-                        <div className="grid grid-cols-3 gap-3 text-center">
-                          <div className="bg-gray-50 p-2 rounded-lg border border-gray-200"><div className="text-xs font-bold mb-1">T1 (Small)</div><div className="text-xl font-bold">{calculateThreshold(weight, BASE_THRESHOLDS.trivial)}</div></div>
-                          <div className="bg-blue-50 p-2 rounded-lg border border-blue-200"><div className="text-xs text-blue-700 font-bold mb-1">T2 (Mod)</div><div className="text-xl font-bold text-blue-800">{calculateThreshold(weight, BASE_THRESHOLDS.small)}</div></div>
-                          <div className="bg-green-50 p-2 rounded-lg border border-green-200"><div className="text-xs text-green-700 font-bold mb-1">T3 (Large)</div><div className="text-xl font-bold text-green-800">{calculateThreshold(weight, BASE_THRESHOLDS.moderate)}</div></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <button onClick={addOutcome} className="mt-6 w-full py-4 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-bold text-lg text-center">+ 新しいアウトカムを追加する</button>
         </div>
       );
     };
