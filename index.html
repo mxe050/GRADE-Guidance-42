@@ -64,7 +64,9 @@
 
     // --- メインアプリケーション ---
     const App = () => {
-      const [activeTab, setActiveTab] = useState('graphical'); 
+      // ★修正：初期タブを「1. 概念と落とし穴（explanation）」に設定
+      const [activeTab, setActiveTab] = useState('explanation'); 
+      
       const [outcomes, setOutcomes] = useState([
         { id: 1, name: '総死亡', utility: 0, overrideWeight: '', isBase: true, isWarning: false },
         { id: 2, name: '重篤な副作用', utility: 0.5, overrideWeight: '', isBase: false, isWarning: false },
